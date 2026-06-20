@@ -109,7 +109,7 @@ README.md           本說明文件
 
 ## 授權
 
-本專案以 [MIT License](LICENSE) 釋出，歡迎自由使用、修改與散布。
+本專案以 [GPL License](LICENSE) 釋出。
 
 ---
 
