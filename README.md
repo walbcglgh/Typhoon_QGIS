@@ -65,7 +65,7 @@
 2. 點選選單 **外掛 (Plugins) → Python 主控台 (Python Console)**
 3. 點選「**顯示編輯器**」開啟程式碼編輯區
 4. 貼上 `main.py` 的完整內容
-5. 修改頂端的 `API_KEY`：
+5. 修改位於第31行的 `API_KEY` 值：
 
 ```python
 API_KEY = "你的-API-KEY-貼在這裡"
