@@ -101,7 +101,7 @@ LOCAL_JSON_PATH = "/path/to/your/typhoon.json"
 ## 檔案說明
 
 ```
-main.py         主程式，貼入 QGIS Python 主控台執行
+main.py         主程式，請貼入 QGIS Python 主控台執行
 README.md       本說明文件
 LICENSE         授權文件  
 ```
