@@ -55,7 +55,7 @@
 ### 額外需求
 
 - **API 金鑰**：需具備中央氣象署開放資料平台帳號。
-- **字型檔**：建議準備 `jf-openhuninn-1.1.ttf` 以獲得最佳視覺效果。
+- **字型檔**：建議準備 [`jf-openhuninn-1.1.ttf`](https://github.com/justfont/open-huninn-font/blob/master/font/jf-openhuninn-2.1.ttf)，本腳本皆使用該字型進行測試。
 
 ### 使用方式
 
@@ -63,7 +63,7 @@
 2. **開啟 QGIS 控制台**：點選 **外掛 (Plugins) → Python 主控台 (Python Console)**。
 3. **配置參數**：
    - 在腳本頂端修改 `API_KEY`。
-   - 設定 `FONT_PATH` 為您的字型檔案路徑（預設支援 `jf open 粉圓`）。
+   - 設定 `FONT_PATH` 為您的字型檔案路徑（預設支援 [`jf open 粉圓`](https://github.com/justfont/open-huninn-font/blob/master/font/jf-openhuninn-2.1.ttf)）。
 4. **執行腳本**：將 `main.py` 內容貼入編輯器並按下執行（Ctrl+Enter）。
 
 ### 主要設定變數
@@ -122,7 +122,7 @@ CSV 內容包含以下欄位（節錄）：
      CSV_SOURCE = "C:/Users/xxx/Downloads/FNV3_2026_07_04T06_00_paired.csv"
      ```
 
-4. 把整份程式碼貼進 Python Console，按 Enter 執行
+4. 把整份程式碼貼進 Python Console，按上方綠色箭頭執行
 5. 圖層面板會出現一個新圖層（預設名稱 `FNV3_Ensemble_Tracks`），裡面就是所有系集成員的路徑
 
 ### 參數說明
@@ -140,7 +140,7 @@ CSV 內容包含以下欄位（節錄）：
 
 ### 風速等級配色
 
-`COLOR_MODE = "wind_category"` 時，路徑會依當時風速落在哪個等級上色，對應 Weather Lab 網站的 Wind Speed Legend：
+當 `COLOR_MODE = "wind_category"` 時，路徑會依當時風速落在哪個等級上色，對應 Weather Lab 網站的 Wind Speed Legend：
 
 | 等級 | 風速 (節) | 顏色 |
 |---|---|---|
