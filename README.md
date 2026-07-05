@@ -5,7 +5,7 @@
 | 腳本 | 資料來源 | 呈現內容 |
 |---|---|---|
 | [`main.py`](#1-mainpy--官方路徑與暴風圈) | 中央氣象署（CWA）開放資料 | 官方「過去路徑 + 預測路徑」單一路徑，含暴風圈、標籤 |
-| [`fnv3.py`](#2-fnv3py--fnv3系集預報路徑) | Google Weather Lab（FNV3 模式） | AI 系集預報，50 個成員的路徑分布（機率/不確定性範圍） |
+| [`fnv3.py`](#fnv3-anchor) | Google Weather Lab（FNV3 模式） | AI 系集預報，50 個成員的路徑分布（機率/不確定性範圍） |
 
 兩支腳本互相獨立，可以只用其中一支，也可以同時載入同一個 QGIS 專案疊圖比較「官方預測」與「AI 系集預報」的差異。
 
@@ -79,6 +79,7 @@ DRAW_RADIUS_25MS = True    # 是否繪製十級風暴風圈（僅限預測段）
 
 ---
 
+<div id="fnv3-anchor"></div>
 ## 2. `fnv3.py` — FNV3 系集預報路徑
 
 讀取從 [Google Weather Lab](https://deepmind.google.com/science/weatherlab) 下載的 FNV3 颱風系集預報 CSV 檔案，在 QGIS 裡自動畫出每個系集成員（ensemble member）的預報路徑，並依風速等級上色，效果類似 Weather Lab 網站上的路徑圖。
