@@ -23,7 +23,7 @@ from qgis.PyQt.QtGui import QColor
 # 參數設定
 CSV_SOURCE = "" # 下載連結或檔案路徑
 TRACK_ID_FILTER = None      # None = 全部颱風；或指定單一颱風，EX: "WP092026"
-LAYER_NAME = "FNV3_Ensemble_Tracks"
+LAYER_NAME = "FNV3_Ensemble_Tracks"  #圖層名稱，不必修改
 
 COLOR_MODE = "wind_category"  # "wind_category" 即依風速等級上色；"track" 即依颱風編號上色；建議依風速等級上色
 
