@@ -110,7 +110,7 @@ CSV 內容包含以下欄位（節錄）：
 2. 上方選單 `Plugins` → `Python Console`
 3. 打開 `fnv3`，把最上面的 `CSV_SOURCE` 改成想讀取的資料來源，支援兩種寫法：
 
-   - **直接填下載連結**（ <u>建議用法</u> ，不需手動下載檔案）：
+   - **直接填下載連結**（ <ins>建議用法</ins> ，不需手動下載檔案）：
 
      ```python
      CSV_SOURCE = "https://deepmind.google.com/science/weatherlab/download/cyclones/FNV3/ensemble/paired/csv/FNV3_2026_07_04T06_00_paired.csv"
