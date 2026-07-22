@@ -21,8 +21,8 @@ from qgis.PyQt.QtCore import QVariant
 from qgis.PyQt.QtGui import QColor
 
 # 參數設定
-CSV_SOURCE = "" # 下載連結或檔案路徑
-TRACK_ID_FILTER = None      # None = 全部颱風；或指定單一颱風，EX: "WP092026"
+CSV_SOURCE = ""              # 下載連結或檔案路徑
+TRACK_ID_FILTER = None       # None = 全部颱風；或指定單一颱風，EX: "WP092026"
 LAYER_NAME = "FNV3_Ensemble_Tracks"
 
 COLOR_MODE = "wind_category"  # "wind_category" 即依風速等級上色；"track" 即依颱風編號上色；建議依風速等級上色
@@ -30,11 +30,11 @@ COLOR_MODE = "wind_category"  # "wind_category" 即依風速等級上色；"trac
 MODEL_LABEL = ""              # 自訂標籤，會加到圖層名稱後面，例如 "WeatherNext2_r0"；CSV本身不含模型名稱，留空則不加
 SAMPLE_LIMIT = None           # 只畫前 X 個系集成員 (1000 members 版本資料較多，可用數字ex： 200 減少成員)；None = 全部成員
 
-LINE_WIDTH = 0.35            # 每條系集成員路徑的線寬 (mm)
-LINE_ALPHA = 160             # 透明度 0~255，數字越小越透明
+LINE_WIDTH = 0.35             # 每條系集成員路徑的線寬 (mm)
+LINE_ALPHA = 160              # 透明度 0~255，數字越小越透明
 
-SHOW_POINTS = 0              # 1 = 額外畫出每個時間點的點圖層；0 = 只畫線
-POINT_SIZE = 1.2             # 點的大小
+SHOW_POINTS = 0               # 1 = 額外畫出每個時間點的點圖層；0 = 只畫線
+POINT_SIZE = 1.2              # 點的大小
 # ----------------------------------------------------------------
 
 WIND_CATEGORIES = [
