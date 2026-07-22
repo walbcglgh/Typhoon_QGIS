@@ -104,7 +104,7 @@ CSV 內容包含以下欄位（節錄）：
 | `minimum_sea_level_pressure_hpa` | 中心最低海平面氣壓 |
 | `maximum_sustained_wind_speed_knots` | 最大持續風速（節） |
 
-> Weather Lab 目前有多種模式可選（Operational、WeatherNext 2 r0/r1/r2、1000 members 版），但 CSV 欄位結構都相同，腳本會自動判斷 `sample = -1` 為單一確定性路徑，其餘視為系集成員（`is_ensemble` 欄位），不需另外設定。Google 官方目前沒有公開的 CSV 欄位技術文件，以上是直接比對多份實際下載檔案歸納出來的結果。
+> Weather Lab 目前有多種模式可選（Operational、WeatherNext 2 r0/r1/r2、1000 members 版），但 CSV 欄位結構都相同，腳本會自動判斷 `sample = -1` 為單一確定性路徑，其餘視為系集成員，不需另外設定。Google 官方目前沒有公開技術文件，以上是直接比對多份實際下載檔案歸納出來的結果。
 
 ### 使用方式
 
