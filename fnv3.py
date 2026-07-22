@@ -23,15 +23,19 @@ from qgis.PyQt.QtGui import QColor
 # 參數設定
 CSV_SOURCE = "" # 下載連結或檔案路徑
 TRACK_ID_FILTER = None      # None = 全部颱風；或指定單一颱風，EX: "WP092026"
-LAYER_NAME = "FNV3_Ensemble_Tracks"  #圖層名稱，不必修改
+LAYER_NAME = "FNV3_Ensemble_Tracks"
 
 COLOR_MODE = "wind_category"  # "wind_category" 即依風速等級上色；"track" 即依颱風編號上色；建議依風速等級上色
+
+MODEL_LABEL = ""              # 自訂標籤，會加到圖層名稱後面，例如 "WeatherNext2_r0"；CSV本身不含模型名稱，留空則不加
+SAMPLE_LIMIT = None           # 只畫前 X 個系集成員 (1000 members 版本資料較多，可用數字ex： 200 減少成員)；None = 全部成員
 
 LINE_WIDTH = 0.35            # 每條系集成員路徑的線寬 (mm)
 LINE_ALPHA = 160             # 透明度 0~255，數字越小越透明
 
 SHOW_POINTS = 0              # 1 = 額外畫出每個時間點的點圖層；0 = 只畫線
-POINT_SIZE = 1.2             # 點的大小 (mm)
+POINT_SIZE = 1.2             # 點的大小
+# ----------------------------------------------------------------
 
 WIND_CATEGORIES = [
     (0, 34, "#3B82F6", "Tropical Depression"),
@@ -63,7 +67,7 @@ def read_fnv3_csv(source):
     reader = csv.DictReader(lines[header_idx:])
     return list(reader)
 
-def build_tracks(rows, track_id_filter=None):
+def build_tracks(rows, track_id_filter=None, sample_limit=None):
     groups = defaultdict(list)
     for r in rows:
         if not r.get("lat") or not r.get("lon"):
@@ -72,6 +76,8 @@ def build_tracks(rows, track_id_filter=None):
         if track_id_filter and tid != track_id_filter:
             continue
         sample = r["sample"]
+        if sample_limit is not None and int(sample) != -1 and int(sample) >= sample_limit:
+            continue
         try:
             lead_h = int(r["lead_time_hours"])
             lat = float(r["lat"])
@@ -103,7 +109,15 @@ def build_tracks(rows, track_id_filter=None):
         pts.sort(key=lambda p: p["lead_h"])
         if len(pts) < 2:
             continue
-        tracks.append({"track_id": tid, "sample": sample, "points": pts})
+        is_ensemble = int(sample) != -1
+        tracks.append(
+            {
+                "track_id": tid,
+                "sample": sample,
+                "is_ensemble": is_ensemble,
+                "points": pts,
+            }
+        )
     return tracks
 
 def build_segments(tracks):
@@ -112,6 +126,10 @@ def build_segments(tracks):
         pts = trk["points"]
         for i in range(len(pts) - 1):
             p1, p2 = pts[i], pts[i + 1]
+
+            if abs(p2["lon"] - p1["lon"]) > 180:
+                continue
+
             if p1["wind"] is not None and p2["wind"] is not None:
                 wind_kt = (p1["wind"] + p2["wind"]) / 2.0
             elif p1["wind"] is not None:
@@ -123,6 +141,7 @@ def build_segments(tracks):
                 {
                     "track_id": trk["track_id"],
                     "sample": trk["sample"],
+                    "is_ensemble": trk["is_ensemble"],
                     "lead_h": p1["lead_h"],
                     "wind_kt": wind_kt,
                     "p1": (p1["lon"], p1["lat"]),
@@ -131,13 +150,30 @@ def build_segments(tracks):
             )
     return segments
 
-def create_track_layer(tracks):
-    layer = QgsVectorLayer("LineString?crs=EPSG:4326", LAYER_NAME, "memory")
+def split_at_antimeridian(points):
+    """依經度是否跨越換日線(>180度跳動)，把點列切成好幾段"""
+    parts = []
+    current = [points[0]]
+    for p in points[1:]:
+        if abs(p["lon"] - current[-1]["lon"]) > 180:
+            if len(current) >= 2:
+                parts.append(current)
+            current = [p]
+        else:
+            current.append(p)
+    if len(current) >= 2:
+        parts.append(current)
+    return parts
+
+
+def create_track_layer(tracks, layer_name):
+    layer = QgsVectorLayer("LineString?crs=EPSG:4326", layer_name, "memory")
     prov = layer.dataProvider()
     prov.addAttributes(
         [
             QgsField("track_id", QVariant.String),
             QgsField("sample", QVariant.Int),
+            QgsField("is_ensemble", QVariant.Bool),
             QgsField("n_points", QVariant.Int),
             QgsField("max_lead_h", QVariant.Int),
             QgsField("init_mslp", QVariant.Double),
@@ -147,35 +183,38 @@ def create_track_layer(tracks):
 
     features = []
     for trk in tracks:
-        pts = [QgsPointXY(p["lon"], p["lat"]) for p in trk["points"]]
-        geom = QgsGeometry.fromPolylineXY(pts)
+        for part in split_at_antimeridian(trk["points"]):
+            pts = [QgsPointXY(p["lon"], p["lat"]) for p in part]
+            geom = QgsGeometry.fromPolylineXY(pts)
 
-        feat = QgsFeature(layer.fields())
-        feat.setGeometry(geom)
-        init_mslp = trk["points"][0]["mslp"]
+            feat = QgsFeature(layer.fields())
+            feat.setGeometry(geom)
+            init_mslp = part[0]["mslp"]
 
-        feat.setAttributes(
-            [
-                trk["track_id"],
-                int(trk["sample"]),
-                len(trk["points"]),
-                trk["points"][-1]["lead_h"],
-                init_mslp,
-            ]
-        )
-        features.append(feat)
+            feat.setAttributes(
+                [
+                    trk["track_id"],
+                    int(trk["sample"]),
+                    trk["is_ensemble"],
+                    len(part),
+                    part[-1]["lead_h"],
+                    init_mslp,
+                ]
+            )
+            features.append(feat)
 
     prov.addFeatures(features)
     layer.updateExtents()
     return layer
 
-def create_segment_layer(segments):
-    layer = QgsVectorLayer("LineString?crs=EPSG:4326", LAYER_NAME, "memory")
+def create_segment_layer(segments, layer_name):
+    layer = QgsVectorLayer("LineString?crs=EPSG:4326", layer_name, "memory")
     prov = layer.dataProvider()
     prov.addAttributes(
         [
             QgsField("track_id", QVariant.String),
             QgsField("sample", QVariant.Int),
+            QgsField("is_ensemble", QVariant.Bool),
             QgsField("lead_h", QVariant.Int),
             QgsField("wind_kt", QVariant.Double),
         ]
@@ -190,7 +229,13 @@ def create_segment_layer(segments):
         feat = QgsFeature(layer.fields())
         feat.setGeometry(geom)
         feat.setAttributes(
-            [seg["track_id"], int(seg["sample"]), seg["lead_h"], seg["wind_kt"]]
+            [
+                seg["track_id"],
+                int(seg["sample"]),
+                seg["is_ensemble"],
+                seg["lead_h"],
+                seg["wind_kt"],
+            ]
         )
         features.append(feat)
 
@@ -198,15 +243,16 @@ def create_segment_layer(segments):
     layer.updateExtents()
     return layer
 
-def create_point_layer(tracks):
+def create_point_layer(tracks, layer_name):
     layer = QgsVectorLayer(
-        "Point?crs=EPSG:4326", LAYER_NAME + "_Points", "memory"
+        "Point?crs=EPSG:4326", layer_name + "_Points", "memory"
     )
     prov = layer.dataProvider()
     prov.addAttributes(
         [
             QgsField("track_id", QVariant.String),
             QgsField("sample", QVariant.Int),
+            QgsField("is_ensemble", QVariant.Bool),
             QgsField("lead_h", QVariant.Int),
             QgsField("valid_time", QVariant.String),
             QgsField("mslp", QVariant.Double),
@@ -226,6 +272,7 @@ def create_point_layer(tracks):
                 [
                     trk["track_id"],
                     int(trk["sample"]),
+                    trk["is_ensemble"],
                     p["lead_h"],
                     p["valid_time"],
                     p["mslp"],
@@ -288,8 +335,10 @@ def style_layer_by_track(layer):
     layer.triggerRepaint()
 
 def main():
+    layer_name = LAYER_NAME + (f"_{MODEL_LABEL}" if MODEL_LABEL else "")
+
     rows = read_fnv3_csv(CSV_SOURCE)
-    tracks = build_tracks(rows, TRACK_ID_FILTER)
+    tracks = build_tracks(rows, TRACK_ID_FILTER, SAMPLE_LIMIT)
 
     if not tracks:
         print("沒有找到任何可畫的路徑，請確認 CSV 內容或 TRACK_ID_FILTER 設定")
@@ -297,22 +346,22 @@ def main():
 
     if COLOR_MODE == "wind_category":
         segments = build_segments(tracks)
-        layer = create_segment_layer(segments)
+        layer = create_segment_layer(segments, layer_name)
         style_layer_by_wind_category(layer)
         QgsProject.instance().addMapLayer(layer)
-        print(f"已加入圖層「{LAYER_NAME}」，共 {len(tracks)} 條路徑、{len(segments)} 段線段 (依風速等級上色)。")
+        print(f"已加入圖層「{layer_name}」，共 {len(tracks)} 條路徑、{len(segments)} 段線段 (依風速等級上色)。")
     else:
-        layer = create_track_layer(tracks)
+        layer = create_track_layer(tracks, layer_name)
         style_layer_by_track(layer)
         QgsProject.instance().addMapLayer(layer)
-        print(f"已加入圖層「{LAYER_NAME}」，共 {len(tracks)} 條系集成員路徑 (依颱風編號上色)。")
+        print(f"已加入圖層「{layer_name}」，共 {len(tracks)} 條系集成員路徑 (依颱風編號上色)。")
 
     if SHOW_POINTS == 1:
-        point_layer = create_point_layer(tracks)
+        point_layer = create_point_layer(tracks, layer_name)
         if COLOR_MODE == "wind_category":
             style_point_layer_by_wind_category(point_layer)
         QgsProject.instance().addMapLayer(point_layer)
         n_pts = sum(len(t["points"]) for t in tracks)
-        print(f"已加入圖層「{LAYER_NAME}_Points」，共 {n_pts} 個時間點。")
+        print(f"已加入圖層「{layer_name}_Points」，共 {n_pts} 個時間點。")
 
 main()
