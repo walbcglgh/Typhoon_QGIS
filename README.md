@@ -89,7 +89,7 @@ DRAW_RADIUS_25MS = True    # 是否繪製十級風暴風圈（僅限預測段）
 
 ### 資料來源
 
-1. 到 [Weather Lab](https://deepmind.google.com/science/weatherlab) 
+1. 到 [Weather Lab](https://deepmind.google.com/science/weatherlab)
 2. 選擇 FNV3 模式、想看的颱風
 3. 複製該次預報的 CSV 下載連結（類似 `https://deepmind.google.com/science/weatherlab/download/cyclones/FNV3/ensemble/paired/csv/FNV3_2026_07_04T06_00_paired.csv`），或直接下載存檔
 
@@ -98,11 +98,13 @@ CSV 內容包含以下欄位（節錄）：
 | 欄位 | 說明 |
 |---|---|
 | `track_id` | 颱風編號，例如 `WP092026` |
-| `sample` | 系集成員編號 (0~49，共 50 個成員) |
+| `sample` | 系集成員編號，`0~49`（或更多，視模式而定）代表系集成員；`-1` 代表沒有系集的單一確定性路徑（例如 WeatherNext Cyclones Operational） |
 | `lead_time_hours` | 預報時效（第幾小時） |
 | `lat` / `lon` | 該時刻的中心緯度／經度 |
 | `minimum_sea_level_pressure_hpa` | 中心最低海平面氣壓 |
 | `maximum_sustained_wind_speed_knots` | 最大持續風速（節） |
+
+> Weather Lab 目前有多種模式可選（Operational、WeatherNext 2 r0/r1/r2、1000 members 版），但 CSV 欄位結構都相同，腳本會自動判斷 `sample = -1` 為單一確定性路徑，其餘視為系集成員（`is_ensemble` 欄位），不需另外設定。Google 官方目前沒有公開的 CSV 欄位技術文件，以上是直接比對多份實際下載檔案歸納出來的結果。
 
 ### 使用方式
 
@@ -125,6 +127,8 @@ CSV 內容包含以下欄位（節錄）：
 4. 把整份程式碼貼進 Python Console，按上方綠色箭頭執行
 5. 圖層面板會出現一個新圖層（預設名稱 `FNV3_Ensemble_Tracks`），裡面就是所有系集成員的路徑
 
+> 若使用「WeatherNext 2 Cyclones (r2, 1000 members)」版本，資料量較大，建議先設定 `SAMPLE_LIMIT`（例如 `200`）只畫部分成員，執行速度會較快。
+
 ### 參數說明
 
 | 參數 | 說明 | 預設值 |
@@ -133,6 +137,8 @@ CSV 內容包含以下欄位（節錄）：
 | `TRACK_ID_FILTER` | 只畫特定颱風，例如 `"WP092026"`；設 `None` 表示全部颱風都畫 | `None` |
 | `LAYER_NAME` | 圖層名稱 | `"FNV3_Ensemble_Tracks"` |
 | `COLOR_MODE` | 上色模式，`"wind_category"`（依風速等級上色）或 `"track"`（依颱風編號隨機上色） | `"wind_category"` |
+| `MODEL_LABEL` | 自訂標籤，會加到圖層名稱後面，例如 `"WeatherNext2_r0"`；CSV本身不含模型名稱，同時載入多個模型結果時可用來區分圖層 | `""`（不加） |
+| `SAMPLE_LIMIT` | 只畫前 N 個系集成員；「1000 members」版本資料量大，設數字（如 `200`）可加快繪製速度 | `None`（全部都畫） |
 | `LINE_WIDTH` | 路徑線寬 (mm) | `0.35` |
 | `LINE_ALPHA` | 線的透明度 (0~255，數字越小越透明) | `160` |
 | `SHOW_POINTS` | `1` = 額外畫出每個時間點的點圖層；`0` = 只畫線 | `0` |
@@ -153,6 +159,13 @@ CSV 內容包含以下欄位（節錄）：
 | Category 5 | ≥ 137 | 🟣 紫 |
 
 原始資料是逐點（逐個時間點）的中心位置與風速，腳本會把相鄰兩點連成一小段線，每段依兩端點風速的平均值決定顏色，多段線接起來就會呈現風速隨路徑變化的效果。
+
+### 換日線（180°經線）處理
+
+部分長期預報路徑（例如接近第 15 天）會跨越東經/西經 180° 這條換日線，腳本會自動偵測相鄰兩點經度是否跳動超過 180 度：
+
+- `COLOR_MODE = "wind_category"`：跳過跨越換日線的那一小段，該處會留一個小缺口，不會畫出橫貫全球的錯誤連線。
+- `COLOR_MODE = "track"`：改成把路徑在跨越處切成兩段獨立的線。
 
 ### 常見問題
 
